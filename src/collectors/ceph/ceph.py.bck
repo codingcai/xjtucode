@@ -19,7 +19,6 @@ except ImportError:
 
 import glob
 import os
-#与子进程相关的模块
 import subprocess
 
 import diamond.collector
@@ -38,8 +37,6 @@ def flatten_dictionary(input, sep='.', prefix=None):
 
       [('a.b', 10), ('c', 20)]
     """
-    
-    #最后返回dir格式的字符串
     for name, value in sorted(input.items()):
         fullname = sep.join(filter(None, [prefix, name]))
         if isinstance(value, dict):
@@ -65,14 +62,11 @@ class CephCollector(diamond.collector.Collector):
         })
         return config_help
 
-    #因此通过这个类调用get_fefault_config的时候会更新config文件 并返回
     def get_default_config(self):
         """
         Returns the default collector settings
         """
-        #这里的配置时在collector中的get_default_config中，它是以字典形式保存的
         config = super(CephCollector, self).get_default_config()
-        #dict.update(dict2)     将字典dict2的键-值对添加到字典dict
         config.update({
             'socket_path': '/var/run/ceph',
             'socket_prefix': 'ceph-',
@@ -85,24 +79,18 @@ class CephCollector(diamond.collector.Collector):
         """Return a sequence of paths to sockets for communicating
         with ceph daemons.
         """
-        #合并路径
-        #例如  ：  /var/run/ceph/ceph-osd01.asok
         socket_pattern = os.path.join(self.config['socket_path'],
                                       (self.config['socket_prefix'] +
                                        '*.' + self.config['socket_ext']))
-        #返回符合规则的文件路径
         return glob.glob(socket_pattern)
-#前缀
+
     def _get_counter_prefix_from_socket_name(self, name):
         """Given the name of a UDS socket, return the prefix
         for counters coming from that source.
         """
-        # os.path.splitext(ceph-osd01.asok)
-        
         base = os.path.splitext(os.path.basename(name))[0]
         if base.startswith(self.config['socket_prefix']):
             base = base[len(self.config['socket_prefix']):]
-        #ceph.osd01
         return 'ceph.' + base
 
     def _get_stats_from_socket(self, name):
@@ -113,7 +101,6 @@ class CephCollector(diamond.collector.Collector):
         an empty result set is returned.
         """
         try:
-            #这里执行了命令
             json_blob = subprocess.check_output(
                 [self.config['ceph_binary'],
                  '--admin-daemon',
@@ -128,7 +115,6 @@ class CephCollector(diamond.collector.Collector):
             return {}
 
         try:
-            #转化为json格式
             json_data = json.loads(json_blob)
         except Exception, err:
             self.log.info('Could not parse stats from %s: %s',
@@ -137,85 +123,24 @@ class CephCollector(diamond.collector.Collector):
             return {}
 
         return json_data
-    
-    
-    
-    
-    def find_latency_data(self,counter_prefix,json_perfdata):
-        #perf dump中所有的latency  不包含recovery过程
-        latency_list =['filestore.journal_latency.avgcount',
-                                   'filestore.journal_latency.sum',
-                                   'filestore.commitcycle_interval.avgcount',
-                                   'filestore.commitcycle_interval.sum',
-                                   'filestore.commitcycle_latency.avgcount',
-                                   'filestore.commitcycle_latency.sum',
-                                   'filestore.apply_latency.avgcount',
-                                   'filestore.apply_latency.sum',
-                                   'filestore.queue_transaction_latency_avg.avgcount',
-                                   'filestore.queue_transaction_latency_avg.sum',
-                                   'osd.op_latency.avgcount',
-                                   'osd.op_latency.sum',
-                                   'osd.op_process_latency.avgcount',
-                                   'osd.op_process_latency.sum',
-                                   'osd.op_r_latency.avgcount',
-                                   'osd.op_r_latency.sum',
-                                   'osd.op_r_process_latency.avgcount',
-                                   'osd.op_r_process_latency.sum',
-                                   'osd.op_w_latency.avgcount',
-                                   'osd.op_w_latency.sum',
-                                   'osd.op_w_process_latency.avgcount',
-                                   'osd.op_w_process_latency.sum',
-                                   'osd.op_rw_rlat.avgcount',
-                                   'osd.op_rw_rlat.sum',
-                                   'osd.subop_latency.avgcount',
-                                   'osd.subop_latency.sum',
-                                   'osd.subop_w_latency.avgcount',
-                                   'osd.subop_w_latency.sum'                         
-                                   ]
-        #num = 0
-        #初始化一个list ， 最后格式为 [(k,v),[k,v]]
-        latency_list_with_tuple = []
-        #根据传过来的所有perf data 调用flatten_dictionary转换
-        for lat_name,value in flatten_dictionary(json_perfdata,prefix=counter_prefix):
-            #去掉prefix进行比较
-            tem_lat_name = lat_name[len(counter_prefix)+1:] 
-            #查看每个元素是否在latency_list
-            if tem_lat_name in latency_list:
-                print lat_name,value
-                tmp = (lat_name,value)
-                #加入到list中
-                latency_list_with_tuple.append(tmp)
-        #num=num+1
-        #print "add_num:",num 
-        # print "length of latency list:",len(latency_list)
-        # for test in latency_list_with_tuple:
-        #   print test
-        return latency_list_with_tuple
-    
-    
 
     def _publish_stats(self, counter_prefix, stats):
         """Given a stats dictionary from _get_stats_from_socket,
         publish the individual values.
-        
-        in here stats are  json format
         """
-        #prefix可能是 ceph.osd01 ，stats为性能数据
-        latencydata = self.find_latency_data(counter_prefix, stats)
-        for stat_name, stat_value in latencydata:  #最后时这里发布，
+        for stat_name, stat_value in flatten_dictionary(
+            stats,
+            prefix=counter_prefix,
+        ):
             self.publish_gauge(stat_name, stat_value)
 
     def collect(self):
         """
         Collect stats
         """
-         #例如这种  /var/run/ceph/ceph-osd01.asok
-        for path in self._get_socket_paths():   
+        for path in self._get_socket_paths():
             self.log.debug('checking %s', path)
-            #这里返回的时ceph.osd01  类似这种的
             counter_prefix = self._get_counter_prefix_from_socket_name(path)
-            #每一个osd的perf dump  这里会成为json格式
             stats = self._get_stats_from_socket(path)
-            #Publish Metric,  counter_prefix is Metric Name, stats is Metric Value
             self._publish_stats(counter_prefix, stats)
         return

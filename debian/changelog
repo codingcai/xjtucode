@@ -1,3 +1,10 @@
+diamond (4.0.375) unstable; urgency=medium
+
+  * Last Commit: (2016-01-20 07:45:53 +0800)
+    5063ecd5135e64a49720687764a97db1b97c28f5 nsqiang <nsqiang@gmail.com>
+
+ -- root <root@admin>  Wed, 20 Jan 2016 07:50:22 +0800
+
 diamond (4.0.374) unstable; urgency=medium
 
   * Last Commit: (2016-01-20 07:32:12 +0800)
