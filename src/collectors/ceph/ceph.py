@@ -181,7 +181,7 @@ class CephCollector(diamond.collector.Collector):
             tem_lat_name = lat_name[len(counter_prefix)+1:] 
             #查看每个元素是否在latency_list
             if tem_lat_name in latency_list:
-                print lat_name,value
+                #print lat_name,value
                 tmp = (lat_name,value)
                 #加入到list中
                 latency_list_with_tuple.append(tmp)
@@ -219,3 +219,10 @@ class CephCollector(diamond.collector.Collector):
             #Publish Metric,  counter_prefix is Metric Name, stats is Metric Value
             self._publish_stats(counter_prefix, stats)
         return
+if __name__=='__main__':
+    test = CephCollector()
+    for path in test._get_socket_paths():
+        print path
+        counter_prefix = test._get_counter_prefix_from_socket_name(path)
+        print counter_prefix
+
