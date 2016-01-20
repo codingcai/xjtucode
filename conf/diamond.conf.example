@@ -205,7 +205,8 @@ enabled = True
 
 [[VMStatCollector]]
 enabled = True
-
+[[CephCollector]]
+enable = True
 ################################################################################
 ### Options for logging
 # for more information on file format syntax:
