@@ -16,6 +16,7 @@ try:
     import json
 except ImportError:
     import simplejson as json
+
 import glob
 import os
 #与子进程相关的模块
@@ -49,7 +50,7 @@ def flatten_dictionary(input, sep='.', prefix=None):
 
 
 class CephCollector(diamond.collector.Collector):
-    latency_tmp=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
+
     def get_default_config_help(self):
         config_help = super(CephCollector, self).get_default_config_help()
         config_help.update({
@@ -173,7 +174,6 @@ class CephCollector(diamond.collector.Collector):
                                    ]
         #num = 0
         #初始化一个list ， 最后格式为 [(k,v),[k,v]]
-       # fo = open("/home/nsq/1.txt","w+")
         latency_list_with_tuple = []
         #根据传过来的所有perf data 调用flatten_dictionary转换
         for lat_name,value in flatten_dictionary(json_perfdata,prefix=counter_prefix):
@@ -183,7 +183,6 @@ class CephCollector(diamond.collector.Collector):
             if tem_lat_name in latency_list:
                 #print lat_name,value
                 tmp = (lat_name,value)
-              #   fo.write(lat_name+"--"+str(value)+'\n')
                 #加入到list中
                 latency_list_with_tuple.append(tmp)
         #num=num+1
@@ -192,25 +191,13 @@ class CephCollector(diamond.collector.Collector):
         # for test in latency_list_with_tuple:
         #   print test
         latency_list_with_tuple_2=[]
-        index=0
-        #fo.write( str (index )+'\n')
-        for item in latency_list_with_tuple:
-            if(index % 2 == 0): 
-                string= item[0][0:len(item[0])-9]
-                
-                if(latency_list_with_tuple[index][1]-CephCollector.latency_tmp[index][1]!=0):
-                    tmp=(string,float(latency_list_with_tuple[index+1][1]-CephCollector.latency_tmp[index+1][1])/(latency_list_with_tuple[index][1]-CephCollector.latency_tmp[index][1]))
-                else:
-                    tmp=(string,0)
-         #       fo.write(string+"--"+str(tmp[1])+'\n')
+        for index in latency_list_with_tuple(len(latency_list_with_tuple)):
+            if(index%2!=0): 
+                str= latency_list_with_tuple[index][0][0:len(latency_list_with_tuple)-9]
+                tmp=(str,latency_list_with_tuple[index+1]-latency_tmp[index+1]/latency_list_with_tuple[index]-latency_tmp[index])
                 latency_list_with_tuple_2.append(tmp)
-            index=index+1
-            if(index==len(latency_list_with_tuple)):
-                break
-            
-            
-        CephCollector.latency_tmp=latency_list_with_tuple
-#	fo.close()
+        latency_tmp=latency_list_with_tuple
+	
         return latency_list_with_tuple_2
     
     
@@ -246,7 +233,4 @@ if __name__=='__main__':
         print path
         counter_prefix = test._get_counter_prefix_from_socket_name(path)
         print counter_prefix
-        stats = test._get_stats_from_socket(path) 
-        latencydata = test.find_latency_data(counter_prefix, stats)
-        for stat_name, stat_value in latencydata:  #最后时这里发布，
-            print stat_name, stat_value
+
