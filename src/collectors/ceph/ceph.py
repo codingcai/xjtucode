@@ -173,7 +173,7 @@ class CephCollector(diamond.collector.Collector):
                                    ]
         #num = 0
         #初始化一个list ， 最后格式为 [(k,v),[k,v]]
-       # fo = open("/home/nsq/1.txt","w+")
+        #fo = open("/home/nsq/1.txt","w+")
         latency_list_with_tuple = []
         #根据传过来的所有perf data 调用flatten_dictionary转换
         for lat_name,value in flatten_dictionary(json_perfdata,prefix=counter_prefix):
@@ -200,6 +200,8 @@ class CephCollector(diamond.collector.Collector):
                 
                 if(latency_list_with_tuple[index][1]-CephCollector.latency_tmp[index][1]!=0):
                     tmp=(string,float(latency_list_with_tuple[index+1][1]-CephCollector.latency_tmp[index+1][1])/(latency_list_with_tuple[index][1]-CephCollector.latency_tmp[index][1]))
+                elif (latency_list_with_tuple[index+1][1]!=0):
+                    tmp=(string,float(latency_list_with_tuple[index+1][1])/latency_list_with_tuple[index][1])
                 else:
                     tmp=(string,0)
          #       fo.write(string+"--"+str(tmp[1])+'\n')
@@ -207,10 +209,12 @@ class CephCollector(diamond.collector.Collector):
             index=index+1
             if(index==len(latency_list_with_tuple)):
                 break
-            
-            
+        #latency_list_with_tuple_2.append((latency_list_with_tuple_2[0][0]+"test",500))
+        #for item in latency_list_with_tuple_2: 
+        #    fo.write(item[0]+"-----"+str(item[1])+'\n')               
         CephCollector.latency_tmp=latency_list_with_tuple
-#	fo.close()
+	#fo.close()
+        #latency_list_with_tuple_2.append((latency_list_with_tuple_2[0][0]+"test",0.05))
         return latency_list_with_tuple_2
     
     
@@ -224,7 +228,7 @@ class CephCollector(diamond.collector.Collector):
         #prefix可能是 ceph.osd01 ，stats为性能数据
         latencydata = self.find_latency_data(counter_prefix, stats)
         for stat_name, stat_value in latencydata:  #最后时这里发布，
-            self.publish_gauge(stat_name, stat_value)
+            self.publish_gauge(stat_name, stat_value,5)
 
     def collect(self):
         """
